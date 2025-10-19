@@ -692,59 +692,68 @@ export default function TravelPlanner() {
     
     const oldStartDate = new Date(travelInfo.startDate)
     const oldEndDate = new Date(travelInfo.endDate)
-    const oldDaysCount = Math.ceil((oldEndDate.getTime() - oldStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    const newDaysCount = Math.ceil((newEndDate.getTime() - newStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
     
     setItinerary(prev => {
-      const newItinerary = [...prev]
+      const newItinerary = []
       
-      // Mettre à jour les dates des jours existants
-      for (let i = 0; i < Math.min(oldDaysCount, newDaysCount); i++) {
-        const dayDate = new Date(newStartDate)
-        dayDate.setDate(dayDate.getDate() + i)
-        newItinerary[i] = {
-          ...newItinerary[i],
-          date: dayDate.toLocaleDateString('fr-FR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-          })
-        }
+      // Calculer les nouvelles dates de début et fin
+      const actualNewStartDate = newStartDate
+      const actualNewEndDate = newEndDate
+      
+      // Créer les jours uniquement pour la nouvelle plage de dates
+      let dayIndex = 0
+      let currentDate = new Date(actualNewStartDate)
+      
+      while (currentDate <= actualNewEndDate) {
+        const dateStr = currentDate.toLocaleDateString('fr-FR', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        })
+        
+        newItinerary.push({
+          day: dayIndex + 1,
+          date: dateStr,
+          activities: []
+        })
+        
+        currentDate.setDate(currentDate.getDate() + 1)
+        dayIndex++
       }
       
-      if (newDaysCount > oldDaysCount) {
-        // Ajouter des jours supplémentaires
-        for (let i = oldDaysCount; i < newDaysCount; i++) {
-          const dayDate = new Date(newStartDate)
-          dayDate.setDate(dayDate.getDate() + i)
-          
-          newItinerary.push({
-            day: i + 1,
-            date: dayDate.toLocaleDateString('fr-FR', { 
-              day: '2-digit', 
-              month: '2-digit', 
-              year: 'numeric' 
-            }),
-            activities: []
-          })
-        }
-      } else if (newDaysCount < oldDaysCount) {
-        // Retirer les jours en trop et conserver les activités
-        const removedDays = newItinerary.splice(newDaysCount)
-        
-        // Ajouter les activités des jours supprimés aux activités disponibles
-        removedDays.forEach(day => {
-          if (day && day.activities) {
-            day.activities.forEach(activity => {
-              // Vérifier que l'activité n'est pas déjà dans les activités disponibles
+      // Placer chaque activité sur sa date calendaire réelle en utilisant la date stockée
+      prev.forEach((oldDay) => {
+        if (oldDay && oldDay.activities) {
+          oldDay.activities.forEach(activity => {
+            // Utiliser la date déjà stockée dans l'ancien jour
+            const oldDayDateStr = oldDay.date
+            
+            // Chercher le nouveau jour qui correspond à cette même date
+            const targetNewDay = newItinerary.find(newDay => 
+              newDay.date === oldDayDateStr
+            )
+            
+            if (targetNewDay) {
+              // Ajouter l'activité au jour qui correspond à sa date d'origine
+              targetNewDay.activities.push(activity)
+              // Copier les métadonnées IA si elles existent
+              if (oldDay._aiOptimized) {
+                targetNewDay._aiOptimized = oldDay._aiOptimized
+                targetNewDay._totalTime = oldDay._totalTime
+                targetNewDay._walkingTime = oldDay._walkingTime
+                targetNewDay._area = oldDay._area
+              }
+            } else {
+              // La date de cette activité n'est plus dans la nouvelle plage
+              // Remettre l'activité dans les activités disponibles
               const alreadyAvailable = selectedActivities.some(a => a.id === activity.id)
               if (!alreadyAvailable) {
                 setSelectedActivities(prev => [...prev, activity])
               }
-            })
-          }
-        })
-      }
+            }
+          })
+        }
+      })
       
       return newItinerary
     })
@@ -785,9 +794,15 @@ export default function TravelPlanner() {
 
               <div className="flex gap-3">
                 <Button 
-                  onClick={handleTravelInfoSubmit}
+                  onClick={() => {
+                    if (suggestedActivities.length > 0) {
+                      setStep('activities')
+                    } else {
+                      handleTravelInfoSubmit()
+                    }
+                  }}
                   disabled={!travelInfo.city.trim() || !travelInfo.startDate || !travelInfo.endDate || isLoading}
-                  className={`flex-1 ${step === 'travel-info' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'}`}
+                  className={`flex-1 ${step === 'travel-info' && suggestedActivities.length === 0 ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'}`}
                   size="lg"
                 >
                   {isLoading ? (
@@ -795,15 +810,15 @@ export default function TravelPlanner() {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                       Génération en cours...
                     </>
-                  ) : step === 'travel-info' ? (
+                  ) : step === 'travel-info' && suggestedActivities.length === 0 ? (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
                       Générer des activités
                     </>
                   ) : (
                     <>
-                      <ArrowRight className="w-4 h-4 mr-2" />
                       Aller aux activités
+                      <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
                 </Button>
@@ -1276,7 +1291,11 @@ export default function TravelPlanner() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Plus className="w-5 h-5 text-orange-500" />
-                    Activités disponibles à planifier
+                    Activités disponibles à planifier ({selectedActivities.filter(activity => 
+                      !itinerary.some(day => 
+                        day && day.activities && day.activities.some(a => a.id === activity.id)
+                      )
+                    ).length})
                   </CardTitle>
                   <CardDescription>
                     Glissez ces activités dans les jours ci-dessous ou utilisez les menus déroulants
@@ -1351,9 +1370,6 @@ export default function TravelPlanner() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                        {day.day}
-                      </div>
                       <div className="flex items-center gap-2">
                         <span>Jour {day.day} - {day.date}</span>
                         {day._aiOptimized && (
@@ -1455,9 +1471,6 @@ export default function TravelPlanner() {
                               <ImageIcon className="w-8 h-8 text-gray-400" />
                             </div>
                           )}
-                          <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
-                            {activityIndex + 1}
-                          </div>
                           <div className="flex-1">
                             <div className="flex items-start justify-between">
                               <div>

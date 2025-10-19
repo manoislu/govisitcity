@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, isDatabaseAvailable } from '@/lib/db'
+import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 API check-duplicates called!')
-    
-    // Vérifier si la base de données est disponible
-    if (!isDatabaseAvailable()) {
-      return NextResponse.json({ 
-        error: 'Database not available',
-        message: 'DATABASE_URL is not configured'
-      }, { status: 503 })
-    }
     
     const { searchParams } = new URL(request.url)
     const city = searchParams.get('city')
@@ -76,9 +68,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('💥 ERROR in check-duplicates API:', error)
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
