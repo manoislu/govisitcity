@@ -14,34 +14,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GoVisitCity - Découvrez votre ville",
-  description: "Explorez les meilleures activités et expériences dans votre ville avec GoVisitCity. Itinéraires personnalisés, recommandations IA, et bien plus encore.",
-  keywords: ["GoVisitCity", "voyage", "activités", "ville", "exploration", "itinéraire", "tourisme", "IA", "Next.js"],
-  authors: [{ name: "GoVisitCity Team" }],
+  title: "Z.ai Code Scaffold - AI-Powered Development",
+  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
+  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
+  authors: [{ name: "Z.ai Team" }],
   icons: {
-    icon: "/favicon.ico",
-    apple: "/icon.png",
+    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
   },
   openGraph: {
-    title: "GoVisitCity - Découvrez votre ville",
-    description: "Explorez les meilleures activités et expériences dans votre ville avec GoVisitCity",
-    url: "https://govisitcity.vercel.app",
-    siteName: "GoVisitCity",
+    title: "Z.ai Code Scaffold",
+    description: "AI-powered development with modern React stack",
+    url: "https://chat.z.ai",
+    siteName: "Z.ai",
     type: "website",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1024,
-        height: 1024,
-        alt: "GoVisitCity Logo",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GoVisitCity - Découvrez votre ville",
-    description: "Explorez les meilleures activités et expériences dans votre ville",
-    images: ["/logo.png"],
+    title: "Z.ai Code Scaffold",
+    description: "AI-powered development with modern React stack",
   },
 };
 
@@ -51,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
