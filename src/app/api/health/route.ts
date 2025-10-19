@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
-import { db } from '@/lib/db';
+import { db, isDatabaseAvailable } from '@/lib/db';
 
 export async function GET() {
   try {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json({ 
+        status: "unhealthy",
+        database: "disconnected",
+        error: "DATABASE_URL is not configured",
+        timestamp: new Date().toISOString()
+      }, { status: 503 });
+    }
+    
     // Test database connection
     await db.$connect()
     

@@ -7,7 +7,12 @@ const globalForPrisma = globalThis as unknown as {
 const getDatabaseUrl = () => {
   const url = process.env.DATABASE_URL
   if (!url) {
-    throw new Error('DATABASE_URL is not set')
+    // En développement, utiliser un chemin par défaut
+    if (process.env.NODE_ENV === 'development') {
+      return 'file:./db/custom.db'
+    }
+    // En production, lever une erreur plus claire
+    throw new Error('DATABASE_URL is not set. Please configure your environment variables.')
   }
   
   // Ensure the URL is absolute
@@ -19,23 +24,35 @@ const getDatabaseUrl = () => {
   return url
 }
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ['query'],
-    datasources: {
-      db: {
-        url: getDatabaseUrl()
+// Créer le client Prisma uniquement si DATABASE_URL est disponible
+const createPrismaClient = () => {
+  try {
+    const databaseUrl = getDatabaseUrl()
+    return new PrismaClient({
+      datasources: {
+        db: {
+          url: databaseUrl
+        }
       }
-    }
-  })
+    })
+  } catch (error) {
+    console.error('Failed to create Prisma client:', error)
+    return null
+  }
+}
 
-if (process.env.NODE_ENV !== 'production') {
+export const db = globalForPrisma.prisma ?? createPrismaClient()
+
+if (process.env.NODE_ENV !== 'production' && db) {
   globalForPrisma.prisma = db
 }
 
 // Test connection function
 export const testDatabaseConnection = async () => {
+  if (!db) {
+    return false
+  }
+  
   try {
     await db.$connect()
     await db.$queryRaw`SELECT 1`
@@ -50,4 +67,9 @@ export const testDatabaseConnection = async () => {
     }
     return false
   }
+}
+
+// Export a function to check if database is available
+export const isDatabaseAvailable = () => {
+  return db !== null
 }
