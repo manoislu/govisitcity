@@ -1,9 +1,23 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseServiceKey)
+let supabase: SupabaseClient | null = null
+
+if (supabaseUrl && supabaseServiceKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseServiceKey)
+    console.log('✅ Supabase client initialized successfully')
+  } catch (error) {
+    console.error('❌ Failed to initialize Supabase client:', error)
+    supabase = null
+  }
+} else {
+  console.warn('⚠️ Supabase environment variables not found. Using mock data mode.')
+}
+
+export { supabase }
 
 // Types pour la base de données
 export interface Activity {
