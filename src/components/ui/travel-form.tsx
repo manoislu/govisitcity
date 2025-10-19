@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MapPin, Users, DollarSign } from "lucide-react"
+import { MapPin, Users, DollarSign, Calendar } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -85,7 +85,8 @@ export function TravelForm({ value, onChange }: TravelFormProps) {
 
       {/* Sélection des dates */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <Calendar className="w-4 h-4" />
           Dates du voyage
         </label>
         <DateRangeTrigger

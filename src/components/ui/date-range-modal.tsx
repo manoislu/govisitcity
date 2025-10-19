@@ -162,7 +162,7 @@ export function DateRangeModal({ open, onOpenChange, value, onChange }: DateRang
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-hidden md:max-w-4xl">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <DialogTitle className="text-lg font-semibold">
             Sélectionnez la période de votre voyage
@@ -229,10 +229,14 @@ export function DateRangeModal({ open, onOpenChange, value, onChange }: DateRang
             </Button>
           </div>
           
-          {/* Calendriers */}
+          {/* Calendriers - Responsive: 1 mois sur mobile, 2 mois sur desktop */}
           <div className="flex gap-6 justify-center">
-            {renderMonth(currentMonth)}
-            {renderMonth(nextMonth)}
+            <div className="w-full max-w-sm">
+              {renderMonth(currentMonth)}
+            </div>
+            <div className="hidden md:block w-full max-w-sm">
+              {renderMonth(nextMonth)}
+            </div>
           </div>
           
           {/* Boutons d'action */}

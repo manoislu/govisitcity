@@ -80,6 +80,21 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+model TravelPlan {
+  id           String   @id @default(cuid())
+  title        String
+  city         String
+  startDate    DateTime
+  endDate      DateTime
+  participants Int
+  budget       String?
+  activityIds  String   // Liste des IDs d'activités en JSON
+  itinerary    Json     // Itinéraire avec les IDs des activités
+  userId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Post {
   id        String   @id @default(cuid())
   title     String
