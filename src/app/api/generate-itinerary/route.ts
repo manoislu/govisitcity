@@ -3,222 +3,170 @@ import ZAI from 'z-ai-web-dev-sdk'
 
 export async function POST(request: NextRequest) {
   try {
-    const { city, activities, days, startDate, participants, budget } = await request.json()
+    console.log('📅 API generate-itinerary called!')
+    
+    const { city, activities, days, startDate, endDate, participants, budget } = await request.json()
+    console.log('📅 Request data:', { city, activities: activities?.length, days, startDate, endDate, participants, budget })
 
-    if (!city || !activities || !Array.isArray(activities) || activities.length === 0) {
+    if (!city || !activities || activities.length === 0 || !days || !startDate) {
+      console.log('❌ Missing required data')
       return NextResponse.json(
-        { error: 'City, activities array, and days are required' },
+        { error: 'Missing required data: city, activities, days, startDate' },
         { status: 400 }
       )
     }
 
-    console.log('🧠 Using AI-powered smart itinerary generation...')
-    
-    // DEBUG: Log API date processing
-    console.log('🔍 API DATE DEBUG:')
-    console.log('📅 Received startDate string:', startDate)
-    console.log('📊 Total activities:', activities.length)
-    console.log('📊 Total days:', days)
+    console.log('🤖 Generating itinerary for', days, 'days in', city)
     
     try {
-      // UTILISER L'IA POUR L'OPTIMISATION INTELLIGENTE
       const zai = await ZAI.create()
       
-      const prompt = `En tant qu'expert en planification de voyages, crée un itinéraire optimisé pour ${days} jours à ${city}.
+      const activitiesList = activities.map((a: any) => `- ${a.name} (${a.category}, ${a.duration})`).join('\n')
+      
+      const prompt = `Génère un itinéraire de ${days} jours pour ${city} du ${startDate} au ${endDate}.
 
-ACTIVITÉS À PLANIFIER :
-${activities.map((a: any, i: number) => `${i+1}. ${a.name} (${a.category} - ${a.duration})`).join('\n')}
+Informations:
+- Participants: ${participants || 2} personnes
+- Budget: ${budget || 'non spécifié'}
+- Activités disponibles:
+${activitiesList}
 
-CONTRAINTES IMPORTANTES :
-1. TEMPS : Chaque journée = 8-10h d'activités max
-2. PROXIMITÉ : Regrouper les activités par quartier
-3. RYTHME : Matin = culture, Après-midi = dynamique, Soir = gastronomie
-4. ÉQUILIBRE : Répartir sur tous les jours
+RÈGLES IMPORTANTES:
+- Répartis les activités sur les ${days} jours de manière logique
+- Regroupe les activités par zone géographique quand possible
+- Prévois des temps de déplacement réalistes
+- Chaque jour doit avoir entre 2 et 4 activités maximum
+- Inclut des temps de pause et de repas
+- Sois réaliste sur les durées et les horaires
 
-FORMAT JSON EXIGÉ :
+Pour chaque jour, fournis:
+- day: numéro du jour (1, 2, 3...)
+- date: date au format JJ/MM/AAAA
+- activities: liste des activités pour ce jour avec leur ordre
+- _totalTime: temps total estimé pour la journée
+- _walkingTime: temps de marche estimé
+- _area: zone géographique principale de la journée
+
+Réponds uniquement au format JSON avec cette structure:
 {
   "itinerary": [
     {
       "day": 1,
+      "date": "JJ/MM/AAAA",
       "activities": [
-        {"id": "id1", "name": "Nom activité", "timeSlot": "09:00-11:00"},
-        {"id": "id2", "name": "Nom activité", "timeSlot": "11:30-13:00"}
-      ]
+        {
+          "id": "id_activité",
+          "name": "nom de l'activité",
+          "description": "description",
+          "category": "catégorie",
+          "duration": "durée",
+          "rating": note,
+          "price": "prix",
+          "image": "image"
+        }
+      ],
+      "_totalTime": "Xh",
+      "_walkingTime": "Xmin",
+      "_area": "zone"
     }
   ]
-}
+}`
 
-Règles : Toutes les activités utilisées, format JSON strict.`
-
-      // AJOUTER UN TIMEOUT DE 10 SECONDES
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('AI timeout after 10 seconds')), 10000)
-      })
-
-      const aiPromise = zai.chat.completions.create({
+      const completion = await zai.chat.completions.create({
         messages: [
           {
             role: 'system',
-            content: 'Tu es un expert en planification. Réponds UNIQUEMENT en JSON valide.'
+            content: 'Tu es un expert en organisation de voyages qui crée des itinéraires réalistes et optimisés. Tu réponds uniquement en JSON valide.'
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        temperature: 0.3,
-        max_tokens: 1500
+        temperature: 0.6,
+        max_tokens: 2500
       })
 
-      const completion = await Promise.race([aiPromise, timeoutPromise])
       const aiResponse = completion.choices[0]?.message?.content
       console.log('🤖 AI Response received:', aiResponse?.substring(0, 200) + '...')
 
-      if (!aiResponse) {
-        throw new Error('No response from AI')
-      }
+      if (aiResponse) {
+        try {
+          let cleanResponse = aiResponse.trim()
+          
+          if (cleanResponse.includes('```json')) {
+            cleanResponse = cleanResponse.replace(/```json\s*/, '').replace(/```\s*$/, '')
+          } else if (cleanResponse.includes('```')) {
+            cleanResponse = cleanResponse.replace(/```\s*/, '').replace(/```\s*$/, '')
+          }
+          
+          const aiData = JSON.parse(cleanResponse)
+          if (aiData.itinerary && Array.isArray(aiData.itinerary)) {
+            console.log(`✅ AI generated itinerary for ${aiData.itinerary.length} days`)
+            
+            // Make sure activities have all required fields
+            const formattedItinerary = aiData.itinerary.map((day: any, dayIndex: number) => ({
+              day: day.day || dayIndex + 1,
+              date: day.date || startDate,
+              activities: day.activities.map((activity: any, actIndex: number) => {
+                const originalActivity = activities.find((a: any) => a.name === activity.name)
+                return {
+                  id: originalActivity?.id || `itinerary_${Date.now()}_${dayIndex}_${actIndex}`,
+                  name: activity.name,
+                  description: originalActivity?.description || activity.description,
+                  category: originalActivity?.category || activity.category,
+                  duration: originalActivity?.duration || activity.duration,
+                  rating: originalActivity?.rating || activity.rating,
+                  price: originalActivity?.price || activity.price,
+                  image: originalActivity?.image || activity.image
+                }
+              }),
+              _totalTime: day._totalTime || "4h",
+              _walkingTime: day._walkingTime || "30min",
+              _area: day._area || city
+            }))
 
-      // Parser la réponse IA
-      let aiItinerary
-      try {
-        aiItinerary = JSON.parse(aiResponse)
-      } catch (parseError) {
-        console.error('❌ Failed to parse AI response:', parseError)
-        throw new Error('Invalid AI response format')
-      }
-
-      // Valider et formater la réponse IA
-      if (!aiItinerary.itinerary || !Array.isArray(aiItinerary.itinerary)) {
-        throw new Error('Invalid AI itinerary structure')
-      }
-
-      // S'assurer que les dates sont correctes
-      const smartItinerary = []
-      for (let day = 1; day <= days; day++) {
-        const date = new Date(startDate + 'T12:00:00')
-        date.setDate(date.getDate() + day - 1)
-        const formattedDate = date.toLocaleDateString('fr-FR', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric'
-        })
-
-        // Trouver le jour correspondant dans la réponse IA
-        const aiDay = aiItinerary.itinerary.find((d: any) => d.day === day)
-        
-        if (aiDay && aiDay.activities) {
-          // Convertir les activités IA en notre format
-          const dayActivities = aiDay.activities.map((aiActivity: any) => {
-            const originalActivity = activities.find((a: any) => 
-              a.name === aiActivity.name || a.id === aiActivity.id
-            )
-            return originalActivity || {
-              ...aiActivity,
-              id: aiActivity.id || `ai_${day}_${Math.random()}`,
-              description: `Activité optimisée par l'IA`,
-              category: 'Optimisé',
-              duration: '2h',
-              rating: 5
-            }
-          })
-
-          smartItinerary.push({
-            day,
-            date: formattedDate,
-            activities: dayActivities,
-            _aiOptimized: true,
-            _totalTime: `${dayActivities.length * 2}h`,
-            _area: 'Optimisé par IA'
-          })
-        } else {
-          // Jour manquant dans la réponse IA - créer un jour vide
-          smartItinerary.push({
-            day,
-            date: formattedDate,
-            activities: [],
-            _aiOptimized: true
-          })
+            console.log('🎉 Returning itinerary:', formattedItinerary.length, 'days')
+            return NextResponse.json({ itinerary: formattedItinerary })
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse AI response:', parseError)
         }
       }
-
-      console.log('🤖 AI OPTIMIZED ITINERARY:', smartItinerary.map(d => 
-        `Day ${d.day}: ${d.date} (${d.activities.length} activités)`
-      ))
-
-      return NextResponse.json({ itinerary: smartItinerary })
-
     } catch (aiError) {
-      console.error('❌ AI optimization failed, using balanced algorithm:', aiError.message)
-      
-      // FALLBACK IMMÉDIAT : Utiliser l'algorithme équilibré
-      const quotient = Math.floor(activities.length / days)
-      const reste = activities.length % days
-      
-      console.log(`🔄 FALLBACK: Distribution équilibrée - ${quotient} activités/jour + ${reste} jours avec +1`)
-      
-      const smartItinerary = []
-      let activityIndex = 0
-      
-      for (let day = 1; day <= days; day++) {
-        const activitiesForThisDay = quotient + (day <= reste ? 1 : 0)
-        const dayActivities = []
-        
-        for (let i = 0; i < activitiesForThisDay && activityIndex < activities.length; i++) {
-          dayActivities.push(activities[activityIndex])
-          activityIndex++
-        }
-        
-        const date = new Date(startDate + 'T12:00:00')
-        date.setDate(date.getDate() + day - 1)
-        const formattedDate = date.toLocaleDateString('fr-FR', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric'
-        })
-        
-        smartItinerary.push({
-          day,
-          date: formattedDate,
-          activities: dayActivities,
-          _aiOptimized: false
-        })
-      }
-
-      console.log('✅ FALLBACK ITINERARY:', smartItinerary.map(d => 
-        `Day ${d.day}: ${d.date} (${d.activities.length} activités)`
-      ))
-
-      return NextResponse.json({ itinerary: smartItinerary })
+      console.error('❌ AI generation failed:', aiError)
     }
 
-  } catch (error) {
-    console.error('💥 CRITICAL ERROR in generate-itinerary API:', error)
-    
-    // DERNIER RECOURS : Distribution simple
+    // Fallback: simple distribution
+    console.log('🔄 Using fallback itinerary generation')
+    const activitiesPerDay = Math.ceil(activities.length / days)
     const fallbackItinerary = []
-    const activitiesPerDay = Math.max(1, Math.ceil(activities.length / days))
     
     for (let day = 1; day <= days; day++) {
       const startIndex = (day - 1) * activitiesPerDay
       const endIndex = Math.min(startIndex + activitiesPerDay, activities.length)
       const dayActivities = activities.slice(startIndex, endIndex)
       
-      const date = new Date(startDate + 'T12:00:00')
-      date.setDate(date.getDate() + day - 1)
-      const formattedDate = date.toLocaleDateString('fr-FR', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric'
-      })
-      
-      fallbackItinerary.push({
-        day,
-        date: formattedDate,
-        activities: dayActivities,
-        _aiOptimized: false
-      })
+      if (dayActivities.length > 0) {
+        fallbackItinerary.push({
+          day: day,
+          date: startDate,
+          activities: dayActivities,
+          _totalTime: `${dayActivities.length * 2}h`,
+          _walkingTime: "20min",
+          _area: city
+        })
+      }
     }
 
     return NextResponse.json({ itinerary: fallbackItinerary })
+
+  } catch (error) {
+    console.error('💥 ERROR in generate-itinerary API:', error)
+    
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

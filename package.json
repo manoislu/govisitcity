@@ -1,11 +1,13 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
-  "version": "0.1.0",
+  "name": "govisitcity",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "nodemon --exec \"npx tsx server.ts\" --watch server.ts --watch src --ext ts,tsx,js,jsx 2>&1 | tee dev.log",
     "build": "next build",
+    "build:vercel": "next build",
     "start": "NODE_ENV=production tsx server.ts 2>&1 | tee server.log",
+    "start:vercel": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
