@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     console.log('🔥 API more-activities called!')
     
     const { city, theme, existingActivities, budget, participants, generateImages = false } = await request.json()
-    console.log('🔥 Request data:', { city, theme, existingActivities?.length, budget, participants, generateImages })
+    console.log('🔥 Request data:', { city, theme, existingActivities: existingActivities?.length || 0, budget, participants, generateImages })
 
     if (!city || !theme) {
       console.log('❌ Missing required data:', { city, theme })
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     try {
       const zai = await ZAI.create()
       
-      const existingNames = existingActivities?.map((a: any) => a.name) || []
+      const existingNames = (existingActivities || []).map((a: any) => a.name)
       
       const prompt = `Génère 4 activités touristiques pour la ville de ${city} avec le thème "${theme}".
 ATTENTION: Ces activités doivent être DIFFÉRENTES des activités déjà existantes.
