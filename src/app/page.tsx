@@ -172,10 +172,16 @@ export default function TravelPlanner() {
       
     } catch (error) {
       console.error('💥 ERROR in handleTravelInfoSubmit:', error)
-      if (error.message.includes('fetch')) {
-        alert('Erreur de connexion au serveur. Veuillez vérifier votre connexion internet.')
+      
+      // Gestion améliorée des erreurs
+      if (error.message.includes('fetch') || error.message.includes('network')) {
+        alert('Erreur de connexion au serveur. Veuillez vérifier votre connexion internet et réessayer.')
+      } else if (error.message.includes('500')) {
+        alert('Erreur serveur interne. Veuillez réessayer dans quelques instants. Si le problème persiste, contactez le support.')
+      } else if (error.message.includes('Database connection failed')) {
+        alert('Erreur de connexion à la base de données. Veuillez réessayer plus tard.')
       } else {
-        alert(`Erreur: ${error.message}`)
+        alert(`Erreur: ${error.message || 'Une erreur inattendue est survenue'}`)
       }
     } finally {
       setIsLoading(false)
