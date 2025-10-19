@@ -35,6 +35,7 @@ model Activity {
   rating      Float?
   price       String?
   image       String?  // Base64 or URL
+  imageGenerated Boolean @default(false) // Flag pour savoir si l'image réelle a été générée
   city        String   // City where this activity is available
   theme       String?  // Theme tag (romantique, aventure, etc.)
   isPopular   Boolean  @default(false)

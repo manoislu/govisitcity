@@ -114,29 +114,23 @@ Réponds uniquement au format JSON avec cette structure:
             if (aiData.activities && Array.isArray(aiData.activities)) {
               console.log(`✅ AI generated ${aiData.activities.length} activities`)
               
-              // Save AI activities to database for future use
+              // Save AI activities to database for future use - SANS génération d'image synchrone
               for (const activity of aiData.activities) {
-                // Générer l'image de manière asynchrone
-                let activityImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23${Math.floor(Math.random()*16777215).toString(16)}' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${activity.name}%3C/text%3E%3C/svg%3E`
-                
-                try {
-                  // Tenter de générer une vraie image
-                  activityImage = await generateActivityImage(activity.name, activity.category, city)
-                } catch (imageError) {
-                  console.warn(`⚠️ Impossible de générer l'image pour ${activity.name}, utilisation du placeholder`)
-                }
+                // Utiliser un placeholder SVG immédiatement
+                const placeholderImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23${Math.floor(Math.random()*16777215).toString(16)}' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${activity.name}%3C/text%3E%3C/svg%3E`
                 
                 await db.activity.create({
                   data: {
                     ...activity,
                     city: city,
                     isActive: true,
-                    image: activityImage
+                    image: placeholderImage,
+                    imageGenerated: false // Flag pour indiquer que l'image doit être générée
                   }
                 })
               }
               
-              console.log('💾 AI activities saved to database')
+              console.log('💾 AI activities saved to database with placeholder images')
               activities = aiData.activities
             }
           } catch (parseError) {
