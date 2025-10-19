@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import { generateActivityImage } from '@/lib/image-generator'
 import ZAI from 'z-ai-web-dev-sdk'
 
 export async function POST(request: NextRequest) {
@@ -18,31 +16,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('📊 First, checking database for activities in', city)
+    console.log('🤖 Generating activities for', city)
     
-    // First try exact match in database
-    let activities = await db.activity.findMany({
-      where: {
-        city: city,
-        isActive: true
-      },
-      orderBy: [
-        { isPopular: 'desc' },
-        { rating: 'desc' }
-      ],
-      take: 8 // Limit to 8 activities
-    })
-
-    console.log(`📊 Found ${activities.length} activities in database for ${city}`)
-
-    // If no activities in database, use AI to generate some
-    if (activities.length === 0) {
-      console.log('🤖 No activities in database, calling AI to generate...')
+    try {
+      const zai = await ZAI.create()
       
-      try {
-        const zai = await ZAI.create()
-        
-        const prompt = `Génère 8 activités touristiques EXCLUSIVEMENT pour la ville de ${city}. 
+      const prompt = `Génère 8 activités touristiques EXCLUSIVEMENT pour la ville de ${city}. 
 ATTENTION: Toutes les activités doivent être spécifiquement situées à ${city} ou dans ses environs immédiats.
 
 Budget: ${budget || 'non spécifié'}
@@ -80,126 +59,96 @@ Réponds uniquement au format JSON avec cette structure:
   ]
 }`
 
-        const completion = await zai.chat.completions.create({
-          messages: [
-            {
-              role: 'system',
-              content: 'Tu es un expert en tourisme qui génère des activités pertinentes et intéressantes. Tu réponds uniquement en JSON valide. IMPORTANT: Toutes les activités doivent être spécifiques à la ville demandée, jamais d\'activités génériques.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000
-        })
-
-        const aiResponse = completion.choices[0]?.message?.content
-        console.log('🤖 AI Response received:', aiResponse?.substring(0, 200) + '...')
-
-        if (aiResponse) {
-          try {
-            // Clean AI response to extract pure JSON
-            let cleanResponse = aiResponse.trim()
-            
-            // Remove markdown code blocks if present
-            if (cleanResponse.includes('```json')) {
-              cleanResponse = cleanResponse.replace(/```json\s*/, '').replace(/```\s*$/, '')
-            } else if (cleanResponse.includes('```')) {
-              cleanResponse = cleanResponse.replace(/```\s*/, '').replace(/```\s*$/, '')
-            }
-            
-            const aiData = JSON.parse(cleanResponse)
-            if (aiData.activities && Array.isArray(aiData.activities)) {
-              console.log(`✅ AI generated ${aiData.activities.length} activities`)
-              
-              // Save AI activities to database for future use
-              for (const activity of aiData.activities) {
-                // Générer l'image de manière asynchrone
-                let activityImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23${Math.floor(Math.random()*16777215).toString(16)}' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${activity.name}%3C/text%3E%3C/svg%3E`
-                
-                try {
-                  // Tenter de générer une vraie image
-                  activityImage = await generateActivityImage(activity.name, activity.category, city)
-                } catch (imageError) {
-                  console.warn(`⚠️ Impossible de générer l'image pour ${activity.name}, utilisation du placeholder`)
-                }
-                
-                await db.activity.create({
-                  data: {
-                    ...activity,
-                    city: city,
-                    isActive: true,
-                    image: activityImage
-                  }
-                })
-              }
-              
-              console.log('💾 AI activities saved to database')
-              activities = aiData.activities
-            }
-          } catch (parseError) {
-            console.error('❌ Failed to parse AI response:', parseError)
-            console.error('❌ Raw AI response:', aiResponse)
-          }
-        }
-      } catch (aiError) {
-        console.error('❌ AI generation failed:', aiError)
-      }
-    }
-
-    // If still no activities (AI failed), return popular activities from the same city first
-    if (activities.length === 0) {
-      console.log('🔍 Still no activities, returning popular activities from the same city first...')
-      
-      // First try to get activities from the same city
-      activities = await db.activity.findMany({
-        where: {
-          city: city,
-          isActive: true
-        },
-        orderBy: [
-          { isPopular: 'desc' },
-          { rating: 'desc' }
-        ],
-        take: 8
-      })
-      
-      // If still no activities from the same city, then get from any city
-      if (activities.length === 0) {
-        console.log('🔍 No activities in the same city, getting from any city...')
-        activities = await db.activity.findMany({
-          where: {
-            isActive: true
+      const completion = await zai.chat.completions.create({
+        messages: [
+          {
+            role: 'system',
+            content: 'Tu es un expert en tourisme qui génère des activités pertinentes et intéressantes. Tu réponds uniquement en JSON valide. IMPORTANT: Toutes les activités doivent être spécifiques à la ville demandée, jamais d\'activités génériques.'
           },
-          orderBy: [
-            { isPopular: 'desc' },
-            { rating: 'desc' }
-          ],
-          take: 8
-        })
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+
+      const aiResponse = completion.choices[0]?.message?.content
+      console.log('🤖 AI Response received:', aiResponse?.substring(0, 200) + '...')
+
+      if (aiResponse) {
+        try {
+          // Clean AI response to extract pure JSON
+          let cleanResponse = aiResponse.trim()
+          
+          // Remove markdown code blocks if present
+          if (cleanResponse.includes('```json')) {
+            cleanResponse = cleanResponse.replace(/```json\s*/, '').replace(/```\s*$/, '')
+          } else if (cleanResponse.includes('```')) {
+            cleanResponse = cleanResponse.replace(/```\s*/, '').replace(/```\s*$/, '')
+          }
+          
+          const aiData = JSON.parse(cleanResponse)
+          if (aiData.activities && Array.isArray(aiData.activities)) {
+            console.log(`✅ AI generated ${aiData.activities.length} activities`)
+            
+            // Add placeholder images and IDs
+            const formattedActivities = aiData.activities.map((activity: any, index: number) => ({
+              id: `ai_${Date.now()}_${index}`,
+              name: activity.name,
+              description: activity.description,
+              category: activity.category,
+              duration: activity.duration,
+              rating: activity.rating,
+              price: activity.price,
+              image: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%234F46E5' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${activity.name}%3C/text%3E%3C/svg%3E`,
+              theme: activity.theme,
+              isPopular: activity.isPopular
+            }))
+
+            console.log('🎉 Returning activities:', formattedActivities.length)
+            return NextResponse.json({ activities: formattedActivities })
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse AI response:', parseError)
+          console.error('❌ Raw AI response:', aiResponse)
+        }
       }
+    } catch (aiError) {
+      console.error('❌ AI generation failed:', aiError)
     }
 
-    console.log(`✅ Returning ${activities.length} activities`)
+    // If AI fails, return fallback activities
+    console.log('🔄 Using fallback activities for', city)
+    const fallbackActivities = [
+      {
+        id: `fallback_${Date.now()}_1`,
+        name: `Visite des monuments de ${city}`,
+        description: `Découvrez les monuments emblématiques et les sites historiques de ${city} lors d'une visite guidée passionnante.`,
+        category: "Culture",
+        duration: "3h",
+        rating: 4.5,
+        price: "€€",
+        image: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%234F46E5' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3EVisite des monuments%3C/text%3E%3C/svg%3E`,
+        theme: "Culturel",
+        isPopular: true
+      },
+      {
+        id: `fallback_${Date.now()}_2`,
+        name: `Exploration gastronomique de ${city}`,
+        description: `Savourez les spécialités culinaires de ${city} dans une tournée des meilleurs restaurants et marchés locaux.`,
+        category: "Gastronomie",
+        duration: "2h30",
+        rating: 4.7,
+        price: "€€€",
+        image: `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%234F46E5' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3EGastronomie locale%3C/text%3E%3C/svg%3E`,
+        theme: "Gastronomique",
+        isPopular: true
+      }
+    ]
 
-    // Transform to match expected format
-    const formattedActivities = activities.map(activity => ({
-      id: activity.id || `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: activity.name,
-      description: activity.description,
-      category: activity.category,
-      duration: activity.duration,
-      rating: activity.rating,
-      price: activity.price,
-      image: activity.image,
-      theme: activity.theme,
-      isPopular: activity.isPopular
-    }))
-
-    console.log('🎉 Returning activities:', formattedActivities.length)
-    return NextResponse.json({ activities: formattedActivities })
+    return NextResponse.json({ activities: fallbackActivities })
 
   } catch (error) {
     console.error('💥 ERROR in suggest-activities API:', error)

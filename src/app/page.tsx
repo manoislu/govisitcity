@@ -624,9 +624,9 @@ export default function GoVisitCity() {
   if (step === 'travel-info') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <div className="max-w-2xl mx-auto pt-16">
+        <div className="max-w-2xl mx-auto pt-4">
           <Card className="shadow-xl">
-            <CardHeader className="text-center pb-8">
+            <CardHeader className="text-center pb-4">
               <div className="flex justify-center mb-4">
               <img 
                 src="/logo.png" 
@@ -644,7 +644,7 @@ export default function GoVisitCity() {
               </div>
             </div>
             <CardDescription className="text-lg mt-2">
-              Découvrez les meilleures activités et expériences dans votre ville
+              Planifiez vos vacances avec l'aide de l'IA.
             </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -658,7 +658,7 @@ export default function GoVisitCity() {
                   <Button 
                     onClick={handleTravelInfoSubmit}
                     disabled={isLoading || !travelInfo.city.trim() || !travelInfo.startDate || !travelInfo.endDate}
-                    className="flex-1"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                     size="lg"
                   >
                     {isLoading ? (
@@ -714,7 +714,7 @@ export default function GoVisitCity() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 pb-32">
-        <div className="max-w-7xl mx-auto pt-8">
+        <div className="max-w-7xl mx-auto pt-2">
           <div className="mb-6">
             <Card>
               <CardHeader>
@@ -925,7 +925,7 @@ export default function GoVisitCity() {
 
         {/* Menu déroulant des sélections - fixé en bas */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-          <div className="max-w-7xl mx-auto p-4">
+          <div className="max-w-7xl mx-auto p-4 pt-2">
             <div 
               className="flex items-center justify-between mb-3 cursor-pointer"
               onClick={() => setShowSelections(!showSelections)}
@@ -1073,7 +1073,7 @@ export default function GoVisitCity() {
   if (step === 'itinerary') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <div className="max-w-6xl mx-auto pt-8">
+        <div className="max-w-6xl mx-auto pt-2">
           <div className="mb-6">
             <Card>
               <CardHeader>
