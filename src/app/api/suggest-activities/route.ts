@@ -162,7 +162,7 @@ Réponds uniquement au format JSON avec cette structure:
       // If still no activities from the same city, then get from any city
       if (activities.length === 0) {
         console.log('🔍 No activities in the same city, getting from any city...')
-        activities = await db.activity.findMany({
+        activities = await db.activities.findMany({
           where: {
             isActive: true
           },
