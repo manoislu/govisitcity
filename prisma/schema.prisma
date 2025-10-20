@@ -13,7 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Trip {
+model travel_plans {
   id          String   @id @default(cuid())
   city        String
   startDate   DateTime
@@ -26,7 +26,7 @@ model Trip {
 }
 
 // Global activities database - pre-populated with images
-model Activity {
+model activities {
   id          String   @id @default(cuid())
   name        String
   description String
@@ -56,7 +56,7 @@ model ItineraryDay {
   day        Int
   date       DateTime
   tripId     String
-  trip       Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  trip       travel_plans     @relation(fields: [tripId], references: [id], onDelete: Cascade)
   activities ItineraryItem[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -66,7 +66,7 @@ model ItineraryItem {
   id           String        @id @default(cuid())
   order        Int
   activityId   String
-  activity     Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activity     activities      @relation(fields: [activityId], references: [id], onDelete: Cascade)
   itineraryDay ItineraryDay  @relation(fields: [itineraryDayId], references: [id], onDelete: Cascade)
   itineraryDayId String
   createdAt    DateTime      @default(now())
