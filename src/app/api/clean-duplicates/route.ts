@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 Mode: ${dryRun ? 'DRY RUN (no actual deletion)' : 'LIVE DELETION'}`)
     
     // Get all activities
-    const allActivities = await db.activity.findMany({
+    const allActivities = await db.activities.findMany({
       orderBy: { createdAt: 'asc' }
     })
     
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         const batch = duplicatesToDelete.slice(i, i + batchSize)
         const batchIds = batch.map(a => a.id)
         
-        await db.activity.deleteMany({
+        await db.activities.deleteMany({
           where: {
             id: {
               in: batchIds
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Get final count
-    const finalCount = dryRun ? allActivities.length : await db.activity.count()
+    const finalCount = dryRun ? allActivities.length : await db.activities.count()
     
     return NextResponse.json({
       success: true,

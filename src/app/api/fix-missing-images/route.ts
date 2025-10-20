@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const { limit = 5 } = await request.json()
     
     // Récupérer les activités qui n'ont pas de vraies images
-    const activitiesNeedingImages = await db.activity.findMany({
+    const activitiesNeedingImages = await db.activities.findMany({
       where: {
         isActive: true,
         OR: [
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         const isRealImage = !newImage.includes('data:image/svg+xml')
         
         // Mettre à jour l'activité dans la base de données
-        await db.activity.update({
+        await db.activities.update({
           where: { id: activity.id },
           data: { image: newImage }
         })

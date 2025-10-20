@@ -6,7 +6,7 @@ export async function GET() {
     console.log('🔍 Checking database for activities without images...')
     
     // Récupérer toutes les activités
-    const activities = await db.activity.findMany({
+    const activities = await db.activities.findMany({
       where: {
         isActive: true
       },

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const response = await zai.images.generations.create({
       prompt: prompt,
-      size: '512x512'
+      size: '1024x1024'
     })
 
     const imageBase64 = response.data[0]?.base64
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       image: `data:image/png;base64,${imageBase64}` 
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating image:', error)
     
     // Return a placeholder image URL or empty string

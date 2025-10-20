@@ -10,7 +10,7 @@ export async function GET() {
     console.log('✅ Database connected successfully')
     
     // Test simple query
-    const count = await db.activity.count()
+    const count = await db.activities.count()
     console.log(`✅ Database query successful: ${count} activities found`)
     
     // Test environment variables

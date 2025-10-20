@@ -878,7 +878,7 @@ export default function TravelPlanner() {
                       className="flex items-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Modifier le plan du voyage
+                      Modifier le voyage
                     </Button>
                     {itinerary.length > 0 && (
                       <Button 
@@ -886,8 +886,8 @@ export default function TravelPlanner() {
                         onClick={() => setStep('itinerary')}
                         className="flex items-center gap-2"
                       >
-                        <Calendar className="w-4 h-4" />
-                        Voir les itinéraires
+                        Aller aux itinéraires
+                        <ArrowRight className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
@@ -1111,7 +1111,7 @@ export default function TravelPlanner() {
                     generateItinerary()
                   }}
                   disabled={selectedActivities.length === 0 || isLoading}
-                  className="px-6 bg-green-600 hover:bg-green-700"
+                  className={`px-6 ${itinerary.length > 0 ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
                 >
                   {isLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -1224,7 +1224,7 @@ export default function TravelPlanner() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-blue-600" />
-                      Votre itinéraire pour {travelInfo.city}
+                      Votre plan de voyage pour {travelInfo.city}
                     </CardTitle>
                     <CardDescription>
                       {travelInfo.startDate?.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} au {travelInfo.endDate?.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} • {travelInfo.participants} personne(s) • {travelInfo.budget}
@@ -1237,29 +1237,7 @@ export default function TravelPlanner() {
                       className="flex items-center justify-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Modifier le plan
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => setStep('activities')}
-                      className="flex items-center justify-center gap-2"
-                    >
-                      <Search className="w-4 h-4" />
-                      Rechercher d'autres activités
-                    </Button>
-                    <Button 
-                      onClick={regenerateAllItineraries}
-                      disabled={selectedActivities.length === 0 || isLoading}
-                      className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      {isLoading ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4" />
-                          Régénérer les itinéraires
-                        </>
-                      )}
+                      Modifier le voyage
                     </Button>
                     <Button 
                       onClick={saveTravel}
@@ -1272,6 +1250,28 @@ export default function TravelPlanner() {
                         <>
                           <Check className="w-4 h-4" />
                           Sauver mon voyage
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => setStep('activities')}
+                      className="flex items-center justify-center gap-2"
+                    >
+                      <Search className="w-4 h-4" />
+                      Rechercher activités
+                    </Button>
+                    <Button 
+                      onClick={regenerateAllItineraries}
+                      disabled={selectedActivities.length === 0 || isLoading}
+                      className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {isLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Régénérer les itinéraires
                         </>
                       )}
                     </Button>
@@ -1293,10 +1293,10 @@ export default function TravelPlanner() {
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Plus className="w-5 h-5 text-orange-500" />
                     Activités disponibles à planifier ({selectedActivities.filter(activity => 
-                      !itinerary.some(day => 
-                        day && day.activities && day.activities.some(a => a.id === activity.id)
-                      )
-                    ).length})
+                  !itinerary.some(day => 
+                    day && day.activities && day.activities.some(a => a.id === activity.id)
+                  )
+                ).length})
                   </CardTitle>
                   <CardDescription>
                     Glissez ces activités dans les jours ci-dessous ou utilisez les menus déroulants

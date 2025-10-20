@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     console.log('🖼️ Request data:', { city, limit })
 
     // Récupérer les activités qui ont encore des images placeholder (SVG simples)
-    const activities = await db.activity.findMany({
+    const activities = await db.activities.findMany({
       where: {
         ...(city && { city: city }),
         isActive: true,
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         const newImage = await generateActivityImage(activity.name, activity.category, activity.city)
         
         // Mettre à jour l'activité dans la base de données
-        const updated = await db.activity.update({
+        const updated = await db.activities.update({
           where: { id: activity.id },
           data: { image: newImage }
         })

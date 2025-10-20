@@ -1,18 +1,11 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
+// Schéma Prisma compatible SQLite (dev) ET PostgreSQL (production)
 generator client {
   provider = "prisma-client-js"
 }
 
-// Change by Me
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") 
 }
 
 model travel_plans {
@@ -27,7 +20,6 @@ model travel_plans {
   itineraries ItineraryDay[]
 }
 
-// Global activities database - pre-populated with images
 model activities {
   id          String   @id @default(cuid())
   name        String
@@ -36,16 +28,15 @@ model activities {
   duration    String
   rating      Float?
   price       String?
-  image       String?  // Base64 or URL
-  imageGenerated Boolean @default(false) // Flag pour savoir si l'image réelle a été générée
-  city        String   // City where this activity is available
-  theme       String?  // Theme tag (romantique, aventure, etc.)
+  image       String?
+  imageGenerated Boolean @default(false)
+  city        String
+  theme       String?
   isPopular   Boolean  @default(false)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  // Relations
   itineraryItems ItineraryItem[]
   
   @@index([city])

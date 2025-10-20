@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get('city')
     
     // Get all activities
-    const allActivities = await db.activity.findMany({
+    const allActivities = await db.activities.findMany({
       where: {
         isActive: true,
         ...(city && { city: city })
