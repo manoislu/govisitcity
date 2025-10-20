@@ -11,7 +11,7 @@ const checkDatabase = async () => {
     console.log('🔍 Vérification de la base de données...\n')
     
     // Récupérer toutes les activités actives
-    const activities = await db.activity.findMany({
+    const activities = await db.activities.findMany({
       where: { isActive: true },
       select: {
         id: true,

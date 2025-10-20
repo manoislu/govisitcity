@@ -250,12 +250,12 @@ async function main() {
   
   try {
     // Clear existing activities
-    await prisma.activity.deleteMany()
+    await prisma.activities.deleteMany()
     console.log('🗑️ Cleared existing activities')
     
     // Insert sample activities
     for (const activity of sampleActivities) {
-      await prisma.activity.create({
+      await prisma.activities.create({
         data: activity
       })
     }

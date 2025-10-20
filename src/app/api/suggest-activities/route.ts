@@ -114,13 +114,13 @@ Réponds uniquement au format JSON avec cette structure:
               console.log(`✅ AI generated ${aiData.activities.length} activities`)
               
               // Save AI activities to database for future use - SANS génération d'image synchrone
-              for (const activities of aiData.activities) {
+              for (const activity of aiData.activities) {
                 // Utiliser un placeholder SVG immédiatement
-                const placeholderImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23${Math.floor(Math.random()*16777215).toString(16)}' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${activities.name}%3C/text%3E%3C/svg%3E`
+                const placeholderImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23${Math.floor(Math.random()*16777215).toString(16)}' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${activity.name}%3C/text%3E%3C/svg%3E`
                 
                 await db.activities.create({
                   data: {
-                    ...activities,
+                    ...activity,
                     city: city,
                     isActive: true,
                     image: placeholderImage,
@@ -178,17 +178,17 @@ Réponds uniquement au format JSON avec cette structure:
     console.log(`✅ Returning ${activities.length} activities`)
 
     // Transform to match expected format
-    const formattedActivities = activities.map(activities => ({
-      id: activities.id || `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: activities.name,
-      description: activities.description,
-      category: activities.category,
-      duration: activities.duration,
-      rating: activities.rating,
-      price: activities.price,
-      image: activities.image,
-      theme: activities.theme,
-      isPopular: activities.isPopular
+    const formattedActivities = activities.map(activity => ({
+      id: activity.id || `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: activity.name,
+      description: activity.description,
+      category: activity.category,
+      duration: activity.duration,
+      rating: activity.rating,
+      price: activity.price,
+      image: activity.image,
+      theme: activity.theme,
+      isPopular: activity.isPopular
     }))
 
     console.log('🎉 Returning activities:', formattedActivities.length)

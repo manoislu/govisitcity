@@ -11,7 +11,7 @@ const cleanupGenericActivities = async () => {
     console.log('🧹 Nettoyage des activités génériques...\n')
     
     // Récupérer toutes les activités
-    const allActivities = await db.activity.findMany({
+    const allActivities = await db.activities.findMany({
       where: { isActive: true },
       select: {
         id: true,
@@ -63,7 +63,7 @@ const cleanupGenericActivities = async () => {
       console.log('\n🗑️ Suppression des activités génériques...')
       
       for (const activity of genericActivities) {
-        await db.activity.delete({
+        await db.activities.delete({
           where: { id: activity.id }
         })
         console.log(`   ❌ Supprimé: ${activity.name}`)
@@ -72,7 +72,7 @@ const cleanupGenericActivities = async () => {
       console.log(`\n✅ ${genericActivities.length} activités génériques supprimées`)
       
       // Afficher le nouvel état
-      const remainingActivities = await db.activity.findMany({
+      const remainingActivities = await db.activities.findMany({
         where: { isActive: true },
         select: {
           id: true,

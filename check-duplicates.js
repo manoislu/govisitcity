@@ -5,7 +5,7 @@ async function findDuplicates() {
     console.log('🔍 Searching for duplicate activities...')
     
     // Get all activities
-    const allActivities = await db.activity.findMany({
+    const allActivities = await db.activities.findMany({
       where: {
         isActive: true
       },

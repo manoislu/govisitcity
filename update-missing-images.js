@@ -9,7 +9,7 @@ async function updateMissingImages() {
     const image2 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
     
     // Update Nighttime Photography Workshop
-    const activity1 = await db.activity.updateMany({
+    const activity1 = await db.activities.updateMany({
       where: {
         name: "Nighttime Photography Workshop in Amsterdam's Jordaan",
         city: "Amsterdam",
@@ -23,7 +23,7 @@ async function updateMissingImages() {
     console.log(`✅ Updated ${activity1.count} photography workshop images`)
     
     // Update Late-Night Art Exploration
-    const activity2 = await db.activity.updateMany({
+    const activity2 = await db.activities.updateMany({
       where: {
         name: "Late-Night Art Exploration at Moco Museum Amsterdam",
         city: "Amsterdam", 
