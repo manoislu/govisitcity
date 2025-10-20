@@ -66,6 +66,7 @@ interface ItineraryDay {
 }
 
 export default function TravelPlanner() {
+  // Version: 2.1 - Production ready with PostgreSQL
   const [step, setStep] = useState<'travel-info' | 'activities' | 'itinerary'>('travel-info')
   const [travelInfo, setTravelInfo] = useState<TravelInfo>({
     city: '',
