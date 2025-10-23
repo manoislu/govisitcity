@@ -3,11 +3,22 @@ import ZAI from 'z-ai-web-dev-sdk'
 
 export async function POST(request: NextRequest) {
   try {
-    const { city, activities, days, startDate, participants, budget } = await request.json()
+    const { travelInfo, selectedActivities } = await request.json()
+    
+    // Extract data from travelInfo object
+    const city = travelInfo.city
+    const startDate = travelInfo.startDate
+    const endDate = travelInfo.endDate
+    const participants = travelInfo.participants || 2
+    const budget = travelInfo.budget || ''
+    const activities = selectedActivities
+    
+    // Calculate number of days
+    const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1
 
     if (!city || !activities || !Array.isArray(activities) || activities.length === 0) {
       return NextResponse.json(
-        { error: 'City, activities array, and days are required' },
+        { error: 'City, activities array, and valid date range are required' },
         { status: 400 }
       )
     }
@@ -16,9 +27,10 @@ export async function POST(request: NextRequest) {
     
     // DEBUG: Log API date processing
     console.log('🔍 API DATE DEBUG:')
-    console.log('📅 Received startDate string:', startDate)
+    console.log('📅 Received startDate:', startDate)
+    console.log('📅 Received endDate:', endDate)
+    console.log('📊 Calculated days:', days)
     console.log('📊 Total activities:', activities.length)
-    console.log('📊 Total days:', days)
     
     try {
       // UTILISER L'IA POUR L'OPTIMISATION INTELLIGENTE
@@ -95,7 +107,7 @@ Règles : Toutes les activités utilisées, format JSON strict.`
       // S'assurer que les dates sont correctes
       const smartItinerary = []
       for (let day = 1; day <= days; day++) {
-        const date = new Date(startDate + 'T12:00:00')
+        const date = new Date(startDate)
         date.setDate(date.getDate() + day - 1)
         const formattedDate = date.toLocaleDateString('fr-FR', { 
           day: '2-digit', 
@@ -168,7 +180,7 @@ Règles : Toutes les activités utilisées, format JSON strict.`
           activityIndex++
         }
         
-        const date = new Date(startDate + 'T12:00:00')
+        const date = new Date(startDate)
         date.setDate(date.getDate() + day - 1)
         const formattedDate = date.toLocaleDateString('fr-FR', { 
           day: '2-digit', 
@@ -203,7 +215,7 @@ Règles : Toutes les activités utilisées, format JSON strict.`
       const endIndex = Math.min(startIndex + activitiesPerDay, activities.length)
       const dayActivities = activities.slice(startIndex, endIndex)
       
-      const date = new Date(startDate + 'T12:00:00')
+      const date = new Date(startDate)
       date.setDate(date.getDate() + day - 1)
       const formattedDate = date.toLocaleDateString('fr-FR', { 
         day: '2-digit', 

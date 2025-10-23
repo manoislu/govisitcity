@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +11,8 @@ import { Separator } from '@/components/ui/separator'
 import { Header } from '@/components/ui/header'
 import { TravelForm } from '@/components/ui/travel-form'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import ErrorBoundary from '@/components/ui/error-boundary'
+import { useErrorHandler } from '@/hooks/use-error-handler'
 import { 
   MapPin, 
   Calendar, 
@@ -33,7 +36,8 @@ import {
   TrendingUp,
   ArrowLeft,
   Search,
-  ArrowRight
+  ArrowRight,
+  Database
 } from 'lucide-react'
 
 interface TravelInfo {
@@ -66,6 +70,26 @@ interface ItineraryDay {
 }
 
 export default function TravelPlanner() {
+  const router = useRouter()
+  
+  // Utiliser le gestionnaire d'erreurs
+  useErrorHandler()
+  
+  // Vérifier si l'utilisateur est connecté
+  useEffect(() => {
+    try {
+      const user = localStorage.getItem('user')
+      const isLoggedIn = localStorage.getItem('isLoggedIn')
+      if (!user || !isLoggedIn) {
+        router.push('/login')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l\'authentification:', error)
+      // En cas d'erreur localStorage, rediriger vers login
+      router.push('/login')
+    }
+  }, [router])
+
   // Version: 2.1 - Production ready with PostgreSQL
   const [step, setStep] = useState<'travel-info' | 'activities' | 'itinerary'>('travel-info')
   const [travelInfo, setTravelInfo] = useState<TravelInfo>({
@@ -86,6 +110,7 @@ export default function TravelPlanner() {
   const [draggedActivity, setDraggedActivity] = useState<Activity | null>(null)
   const [draggedFromDay, setDraggedFromDay] = useState<number | null>(null)
   const [showSelections, setShowSelections] = useState(false)
+  const [useAI, setUseAI] = useState(true) // Nouvelle option pour utiliser l'IA
 
   // Effet pour détecter les changements de dates et mettre à jour l'itinéraire
   useEffect(() => {
@@ -146,7 +171,8 @@ export default function TravelPlanner() {
         body: JSON.stringify({ 
           city: travelInfo.city,
           budget: travelInfo.budget || '',
-          participants: travelInfo.participants || 1
+          participants: travelInfo.participants || 1,
+          useAI: useAI // Ajouter l'option pour utiliser l'IA
         })
       })
       
@@ -166,10 +192,17 @@ export default function TravelPlanner() {
         return
       }
       
-      setSuggestedActivities(data.activities.map(activity => ({ ...activity, isNewlyAdded: false })))
+      setSuggestedActivities(data.activities.map(activity => ({ 
+        ...activity, 
+        isNewlyAdded: false,
+        isAIGenerated: data.isAIGenerated || false
+      })))
       setStep('activities')
       
-      generateImagesForActivitiesSimple(data.activities)
+      // Ne générer des images que si les activités ne viennent pas de l'IA ou si elles n'ont pas d'images
+      if (!data.isAIGenerated) {
+        generateImagesForActivitiesSimple(data.activities)
+      }
       
     } catch (error) {
       console.error('💥 ERROR in handleTravelInfoSubmit:', error)
@@ -777,14 +810,14 @@ export default function TravelPlanner() {
       <>
         <Header />
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-          <div className="max-w-2xl mx-auto pt-2">
+          <div className="max-w-[460px] mx-auto pt-2">
             <Card className="shadow-xl">
-              <CardHeader className="text-center pb-8">
-                <CardTitle className="text-3xl font-bold text-gray-900">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-2xl font-normal text-gray-900">
                   Planifiez votre voyage parfait
                 </CardTitle>
-                <CardDescription className="text-lg mt-2">
-                  Définissez vos paramètres et laissez l'IA vous proposer les meilleures activités et planifier vos itinéraires.
+                <CardDescription className="text-[#6CCDEA] text-base mt-2 font-normal">
+                  Définissez vos préférences pour que notre IA vous propose et planifie les meilleurs itinéraires.
                 </CardDescription>
               </CardHeader>
             <CardContent className="space-y-6">
@@ -792,6 +825,55 @@ export default function TravelPlanner() {
                 value={travelInfo}
                 onChange={setTravelInfo}
               />
+
+              {/* Option IA */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-purple-600" />
+                      <span className="font-medium text-purple-900">Génération IA</span>
+                    </div>
+                    <div className="text-sm text-purple-700">
+                      {useAI ? 'Activités personnalisées par IA' : 'Activités prédéfinies'}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setUseAI(false)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        !useAI 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-white text-purple-600 hover:bg-purple-50 border border-purple-200'
+                      }`}
+                    >
+                      <Database className="w-4 h-4 inline mr-1" />
+                      Base de données
+                    </button>
+                    <button
+                      onClick={() => setUseAI(true)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        useAI 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-white text-purple-600 hover:bg-purple-50 border border-purple-200'
+                      }`}
+                    >
+                      <Sparkles className="w-4 h-4 inline mr-1" />
+                      IA
+                    </button>
+                  </div>
+                </div>
+                {useAI && (
+                  <div className="mt-3 text-xs text-purple-600 bg-purple-100 rounded-md p-2">
+                    ✨ L'IA générera des activités uniques et personnalisées selon vos préférences avec des images générées automatiquement
+                  </div>
+                )}
+                {!useAI && (
+                  <div className="mt-3 text-xs text-purple-600 bg-purple-100 rounded-md p-2">
+                    📚 Utilisation d'activités vérifiées et prédéfinies dans notre base de données
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-3">
                 <Button 
@@ -803,7 +885,7 @@ export default function TravelPlanner() {
                     }
                   }}
                   disabled={!travelInfo.city.trim() || !travelInfo.startDate || !travelInfo.endDate || isLoading}
-                  className={`flex-1 ${step === 'travel-info' && suggestedActivities.length === 0 ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'}`}
+                  className={`flex-1 cursor-pointer ${step === 'travel-info' && suggestedActivities.length === 0 ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-white text-gray-900 hover:bg-gray-50 border border-gray-300'}`}
                   size="lg"
                 >
                   {isLoading ? (
@@ -857,7 +939,7 @@ export default function TravelPlanner() {
       <>
         <Header />
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 pb-32">
-          <div className="max-w-7xl mx-auto pt-2">
+          <div className="max-w-6xl mx-auto pt-2">
           <div className="mb-6">
             <Card>
               <CardHeader>
@@ -975,6 +1057,7 @@ export default function TravelPlanner() {
                 {unselectedActivities.map((activity) => {
                   const isSelected = selectedActivities.find(a => a.id === activity.id)
                   const isNewlyAdded = (activity as any).isNewlyAdded === true
+                  const isAIGenerated = (activity as any).isAIGenerated === true
                   return (
                     <Card 
                       key={activity.id}
@@ -982,15 +1065,23 @@ export default function TravelPlanner() {
                         isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
                       } ${
                         isNewlyAdded ? 'ring-2 ring-green-400 bg-green-50' : ''
+                      } ${
+                        isAIGenerated && !isNewlyAdded ? 'ring-2 ring-purple-200 bg-purple-50' : ''
                       }`}
                     >
-                      {isNewlyAdded && (
-                        <div className="absolute top-2 left-2 z-10">
+                      <div className="absolute top-2 left-2 z-10 flex gap-1">
+                        {isNewlyAdded && (
                           <Badge className="bg-green-500 text-white text-xs px-2 py-1">
                             Nouveau
                           </Badge>
-                        </div>
-                      )}
+                        )}
+                        {isAIGenerated && (
+                          <Badge className="bg-purple-500 text-white text-xs px-2 py-1 flex items-center gap-1">
+                            <Brain className="w-3 h-3" />
+                            IA
+                          </Badge>
+                        )}
+                      </div>
                       <div className="relative" onClick={() => toggleActivitySelection(activity)}>
                         {activity.image ? (
                           <img 

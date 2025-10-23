@@ -63,7 +63,7 @@ Réponds uniquement au format JSON avec cette structure:
       }
     ],
     temperature: 0.7,
-    max_tokens: 1500 // Réduit de 2000 à 1500 pour plus de rapidité
+    max_tokens: 2000
   })
 
   const aiResponse = completion.choices[0]?.message?.content
@@ -88,19 +88,15 @@ Réponds uniquement au format JSON avec cette structure:
         // Save AI activities to database for future use (with timeout protection)
         const savedActivities = []
         
-        // Generate images with timeout protection
-        const imagePromises = aiData.activities.map(async (activity, index) => {
+        // Generate images in parallel for better performance
+        const imagePromises = aiData.activities.map(async (activity) => {
           try {
             console.log(`🖼️ Generating image for: ${activity.name}`)
-            const imagePromise = generateActivityImage(activity.name, activity.category, city)
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Image generation timeout')), 5000) // 5 secondes par image
-            )
-            return await Promise.race([imagePromise, timeoutPromise])
+            return await generateActivityImage(activity.name, activity.category, city)
           } catch (error) {
             console.error(`❌ Failed to generate image for ${activity.name}:`, error)
             // Generate fallback image
-            return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%234F46E5' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${encodeURIComponent(activity.name)}%3C/text%3E%3C/svg%3E`
+            return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}' width='400' height='300'/%3E%3Ctext x='200' y='150' text-anchor='middle' fill='white' font-family='Arial' font-size='16'%3E${encodeURIComponent(activity.name)}%3C/text%3E%3C/svg%3E`
           }
         })
         
@@ -161,7 +157,7 @@ export async function POST(request: NextRequest) {
       // Add timeout for the entire AI generation process
       const aiGenerationPromise = generateActivitiesWithAI(city, theme, budget, participants, existingActivities)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('AI generation timeout')), 15000) // Réduit à 15 secondes
+        setTimeout(() => reject(new Error('AI generation timeout')), 30000) // 30 seconds for AI + image generation
       )
       
       const generatedActivities = await Promise.race([aiGenerationPromise, timeoutPromise]) as any[]
