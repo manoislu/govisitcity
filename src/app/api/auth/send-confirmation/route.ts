@@ -6,27 +6,18 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
+    const { email, name } = await request.json()
 
     if (!email) {
       return NextResponse.json({ error: 'Email requis' }, { status: 400 })
     }
 
-    // TODO: Vérifier si l'utilisateur existe
-    // const user = await db.user.findUnique({
-    //   where: { email }
-    // })
-
-    // if (!user) {
-    //   return NextResponse.json({ error: 'Email non trouvé' }, { status: 404 })
-    // }
-
-    // Générer un token de réinitialisation
+    // Générer un token de confirmation
     const token = crypto.randomBytes(32).toString('hex')
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1h
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24h
 
-    // TODO: Sauvegarder le token
-    // await db.passwordReset.create({
+    // TODO: Sauvegarder le token en base de données
+    // await db.emailVerification.create({
     //   data: {
     //     email,
     //     token,
@@ -34,40 +25,40 @@ export async function POST(request: NextRequest) {
     //   }
     // })
 
-    const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`
+    const confirmationUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`
 
     const { data, error } = await resend.emails.send({
       from: 'GoVisitCity <noreply@govisitcity.com>',
       to: [email],
-      subject: 'Réinitialisation de votre mot de passe',
+      subject: 'Confirmez votre adresse email',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="text-align: center; padding: 20px;">
             <img src="${process.env.NEXTAUTH_URL}/govisitcity-logo.png" alt="GoVisitCity" style="height: 60px;">
           </div>
           
-          <h2 style="color: #333; margin-bottom: 20px;">Réinitialisation du mot de passe</h2>
+          <h2 style="color: #333; margin-bottom: 20px;">Bienvenue ${name || ''} !</h2>
           
           <p style="color: #666; line-height: 1.6;">
-            Vous avez demandé à réinitialiser votre mot de passe. 
-            Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe :
+            Merci de vous être inscrit sur GoVisitCity. Pour finaliser votre inscription, 
+            veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous :
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #dc3545; color: white; padding: 12px 30px; 
+            <a href="${confirmationUrl}" 
+               style="background-color: #007bff; color: white; padding: 12px 30px; 
                       text-decoration: none; border-radius: 5px; display: inline-block;">
-              Réinitialiser mon mot de passe
+              Confirmer mon email
             </a>
           </div>
           
           <p style="color: #999; font-size: 14px; margin-top: 30px;">
-            Ce lien expirera dans 1 heure. Si vous n'avez pas demandé de réinitialisation, 
+            Ce lien expirera dans 24 heures. Si vous n'avez pas créé de compte, 
             vous pouvez ignorer cet email.
           </p>
           
           <p style="color: #999; font-size: 12px; margin-top: 20px;">
-            Ou copiez-collez ce lien : ${resetUrl}
+            Ou copiez-collez ce lien : ${confirmationUrl}
           </p>
         </div>
       `
@@ -80,12 +71,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Email de réinitialisation envoyé',
+      message: 'Email de confirmation envoyé',
       data 
     })
 
   } catch (error) {
-    console.error('Erreur forgot-password:', error)
+    console.error('Erreur send-confirmation:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

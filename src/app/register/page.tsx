@@ -75,7 +75,7 @@ export default function RegisterPage() {
     }
 
     // Caractère spécial
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+       if (/[!@#$%^&*(),.?":{}|<>_\/]/.test(password)) {
       score += 1
     } else {
       feedback.push('Au moins 1 caractère spécial')
